@@ -1,104 +1,74 @@
-<!DOCTYPE html><html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kinzi's FBS Trading Hub</title>
-  <meta name="description" content="Trade Forex with FBS. Learn, register, and start trading securely." />
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: #e5e7eb;
-      line-height: 1.6;
-    }
-    header {
-      background: #020617;
-      padding: 20px;
-      text-align: center;
-    }
-    header h1 { color: #38bdf8; }
-    nav a {
-      margin: 0 10px;
-      color: #e5e7eb;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    section {
-      padding: 40px 20px;
-      max-width: 900px;
-      margin: auto;
-    }
-    .card {
-      background: #020617;
-      padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-    }
-    .btn {
-      display: inline-block;
-      background: #38bdf8;
-      color: #020617;
-      padding: 12px 20px;
-      border-radius: 6px;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    footer {
-      background: #020617;
-      text-align: center;
-      padding: 20px;
-      font-size: 14px;
-    }
-  </style>
-</head>
-<body><header>
-  <h1>Kinzi's FBS Trading Hub</h1>
-  <p>Forex • Crypto • Indices • Education</p>
-  <nav>
-    <a href="#about">About</a>
-    <a href="#start">Start Trading</a>
-    <a href="#education">Education</a>
-    <a href="#contact">Contact</a>
-  </nav>
-</header><section id="about">
-  <div class="card">
-    <h2>About This Platform</h2>
-    <p>This website helps new traders open and use an FBS trading account. You will learn the basics of Forex trading and register safely through FBS.</p>
-    <p><strong>Note:</strong> This site does NOT collect login details or manage funds.</p>
-  </div>
-</section><section id="start">
-  <div class="card">
-    <h2>Start Trading with FBS</h2>
-    <ol>
-      <li>Create an FBS trading account</li>
-      <li>Verify your ID</li>
-      <li>Deposit funds</li>
-      <li>Trade using MT4 / MT5</li>
-    </ol>
-    <a class="btn" href="https://fbs.partners?ibl=1074946&ibp=43259494" target="_blank">
-      Open FBS Account
-    </a>
-  </div>
-</section><section id="education">
-  <div class="card">
-    <h2>Trading Education</h2>
-    <ul>
-      <li>What is Forex trading?</li>
-      <li>Risk management</li>
-      <li>Lot sizes & leverage</li>
-      <li>Support & resistance</li>
-    </ul>
-    <p>More tutorials coming soon.</p>
-  </div>
-</section><section id="contact">
-  <div class="card">
-    <h2>Contact</h2>
-    <p>Email: kinzisolutions@gmail.com</p>
-    <p>WhatsApp / Telegram: Coming soon</p>
-  </div>
-</section><footer>
-  <p>© 2025 Kinzi's Solutions | Affiliate of FBS</p>
-  <p>Trading involves risk. Trade responsibly.</p>
-</footer></body>
-</html>
+//+------------------------------------------------------------------+
+//| Kinzi FBS Trading Bot (MT5)                                      |
+//| Strategy: Moving Average Crossover                              |
+//| Broker: FBS                                                     |
+//+------------------------------------------------------------------+
+#property copyright "Kinzi's Solutions"
+#property version   "1.00"
+#property strict
+
+#include <Trade/Trade.mqh>
+CTrade trade;
+
+// === INPUT SETTINGS ===
+input double LotSize = 0.01;
+input int FastMAPeriod = 14;
+input int SlowMAPeriod = 50;
+input int StopLoss = 300;      // in points
+input int TakeProfit = 600;    // in points
+
+// === GLOBAL VARIABLES ===
+double fastMA_current, fastMA_previous;
+double slowMA_current, slowMA_previous;
+
+//+------------------------------------------------------------------+
+//| Expert initialization                                           |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   Print("Kinzi FBS EA Initialized Successfully");
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Expert tick function                                            |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   // Get Moving Averages
+   fastMA_current  = iMA(_Symbol, _Period, FastMAPeriod, 0, MODE_EMA, PRICE_CLOSE, 0);
+   fastMA_previous = iMA(_Symbol, _Period, FastMAPeriod, 0, MODE_EMA, PRICE_CLOSE, 1);
+
+   slowMA_current  = iMA(_Symbol, _Period, SlowMAPeriod, 0, MODE_EMA, PRICE_CLOSE, 0);
+   slowMA_previous = iMA(_Symbol, _Period, SlowMAPeriod, 0, MODE_EMA, PRICE_CLOSE, 1);
+
+   // Check if there is an open position
+   if(PositionSelect(_Symbol)) return;
+
+   // BUY CONDITION
+   if(fastMA_previous < slowMA_previous && fastMA_current > slowMA_current)
+   {
+      trade.Buy(
+         LotSize,
+         _Symbol,
+         Ask,
+         Ask - StopLoss * _Point,
+         Ask + TakeProfit * _Point,
+         "Kinzi Buy Trade"
+      );
+   }
+
+   // SELL CONDITION
+   if(fastMA_previous > slowMA_previous && fastMA_current < slowMA_current)
+   {
+      trade.Sell(
+         LotSize,
+         _Symbol,
+         Bid,
+         Bid + StopLoss * _Point,
+         Bid - TakeProfit * _Point,
+         "Kinzi Sell Trade"
+      );
+   }
+}
+//+------------------------------------------------------------------+
